@@ -1,0 +1,616 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   framure forge — global styles
+   "A dark gallery where the material is the only color."
+   Strict monochrome. Design tokens as CSS custom properties.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Monochrome ramp (black → white) */
+  --c-0: #050506;   /* near-black backdrop base */
+  --c-1: #0b0b0d;
+  --c-2: #121214;
+  --c-3: #1b1b1e;
+  --c-4: #26262a;
+  --c-5: #37373c;
+  --c-6: #55555c;
+  --c-7: #85858c;
+  --c-8: #b4b4ba;
+  --c-9: #e8e8eb;
+  --c-10: #ffffff;
+
+  /* Semantic tokens */
+  --bg: var(--c-0);
+  --panel: rgba(11, 11, 13, 0.72);
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --text: var(--c-9);
+  --text-dim: var(--c-7);
+  --text-faint: var(--c-6);
+  --accent: var(--c-10);
+
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas,
+    monospace;
+
+  /* Rhythm */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius: 10px;
+  --radius-sm: 7px;
+
+  /* Effects — restrained glass, not frosted-heavy */
+  --blur: blur(10px);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  --dock-width: min(720px, 100%);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text);
+  /* Dark gallery backdrop: slightly lighter behind the display, near-black
+     at the edges. The scene fog is tuned to melt into this. */
+  background:
+    radial-gradient(90% 70% at 50% 42%, #131316 0%, #0a0a0c 55%, var(--c-0) 100%)
+    fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+
+/* ── App layout ─────────────────────────────────────────────────────────── */
+
+.app {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.app__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* UI overlay sits above the canvas but stays click-through except on controls. */
+.app__ui {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5);
+  pointer-events: none;
+}
+
+/*
+  pointer-events is inherited, so everything inside the overlay stays
+  click-through (none) by default. ONLY the actual interactive widgets opt
+  back in — never layout containers (.header, .app__spacer, .app__dock),
+  which span the full viewport width and would swallow canvas input.
+*/
+.app__ui .header__brand,
+.app__ui .header__meta,
+.app__ui .dev-panel,
+.app__ui .tray,
+.app__ui .promptbar,
+.app__ui .prompt-hint,
+.app__ui .inspector,
+.app__ui .lightbox {
+  pointer-events: auto;
+}
+
+.app__spacer {
+  flex: 1 1 auto;
+}
+
+.app__dock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.header__mark {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--c-10), var(--c-6));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.header__wordmark {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: lowercase;
+  color: var(--text);
+}
+
+.header__meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ── Shared panel finish (restrained glass) ─────────────────────────────── */
+
+.dev-panel,
+.tray,
+.promptbar {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow);
+}
+
+/* ── Prompt bar — second most important element after the scene ─────────── */
+
+.promptbar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: var(--dock-width);
+}
+
+.promptbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+}
+
+.promptbar__input {
+  flex: 1 1 auto;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  padding: var(--space-4) var(--space-4);
+}
+
+.promptbar__input::placeholder {
+  color: var(--text-faint);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.promptbar__input--fading::placeholder {
+  opacity: 0;
+}
+
+/* First-visit hint above the bar — click to try a prompt. */
+.prompt-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  background: transparent;
+  border: none;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.prompt-hint:hover {
+  color: var(--text);
+}
+
+.promptbar__submit {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--c-10);
+  background: var(--c-2);
+  border: 1px solid var(--c-4);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-6);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.promptbar__submit:hover:not(:disabled) {
+  background: var(--c-3);
+  border-color: var(--c-5);
+}
+
+.promptbar__submit:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.promptbar__error {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--c-7);
+  padding-bottom: var(--space-1);
+}
+
+/* Quiet monochrome spinner. */
+.spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--c-9);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Materials tray — sphere thumbnails ─────────────────────────────────── */
+
+.tray {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: var(--dock-width);
+  padding: var(--space-3) var(--space-4);
+}
+
+.tray__label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.tray__slots {
+  display: flex;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+}
+
+/* Circular material-ball slot. Empty: dark disc with a subtle ring. */
+.swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--c-3) 0%,
+    var(--c-1) 65%,
+    var(--c-0) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  cursor: default;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.swatch--filled {
+  position: relative;
+  border-color: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+}
+
+.swatch--active {
+  border-color: var(--c-9);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(255, 255, 255, 0.28);
+}
+
+.swatch__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+button.swatch:hover {
+  border-color: var(--c-8);
+  transform: translateY(-1px);
+}
+
+/* Prompt tooltip on hover (filled slots only). */
+.swatch--filled:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--c-2);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ── Inspector — active material maps (right side) ─────────────────────── */
+
+.inspector {
+  position: absolute;
+  right: var(--space-5);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 116px;
+  padding: var(--space-3);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow);
+}
+
+.inspector__title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  line-height: 1.5;
+  overflow: hidden;
+  /* Wrap up to two lines, then ellipsis (full label on hover via title=). */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: break-word;
+}
+
+.inspector__maps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.inspector__map {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.inspector__img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--panel-border);
+  transition: border-color 0.15s ease;
+}
+
+.inspector__map:hover .inspector__img {
+  border-color: var(--c-7);
+}
+
+.inspector__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: left;
+}
+
+.inspector__download {
+  width: 100%;
+}
+
+/* ── Lightbox — monochrome, click anywhere to close ────────────────────── */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 5, 6, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: zoom-out;
+}
+
+.lightbox__figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.lightbox__img {
+  max-width: min(70vmin, 512px);
+  max-height: 70vmin;
+  border-radius: var(--radius);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+}
+
+.lightbox__caption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ── Dev panel — receded corner tool, not product UI ───────────────────── */
+
+.dev-panel {
+  position: absolute;
+  left: var(--space-5);
+  top: 64px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  font-size: 12px;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+.dev-panel:hover,
+.dev-panel:focus-within {
+  opacity: 1;
+}
+
+.dev-panel__tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-0);
+  background: var(--c-7);
+  padding: 2px var(--space-2);
+  border-radius: 4px;
+}
+
+.dev-panel__row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dev-panel__status {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.dev-panel__status strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Buttons (dev panel) — brightness shifts only, never color. */
+.btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--c-0);
+  background: var(--c-9);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--c-10);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn--ghost {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--panel-border);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Footer credit — in the gap below the dock, never overlapping ───────── */
+
+.footer-credit {
+  position: absolute;
+  left: var(--space-5);
+  bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  opacity: 0.55;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .footer-credit {
+    display: none;
+  }
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .app__ui {
+    padding: var(--space-4);
+  }
+  .header__meta {
+    display: none;
+  }
+  .tray__slots {
+    overflow-x: auto;
+  }
+}
