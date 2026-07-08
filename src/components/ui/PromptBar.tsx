@@ -1,6 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMaterialStore } from '../../state/materialStore';
-import { EXPECTED_GENERATION_MS } from '../../generation/mockGenerator';
 
 /**
  * The material-generation prompt box. Submits to the store's `generate`
@@ -8,16 +7,23 @@ import { EXPECTED_GENERATION_MS } from '../../generation/mockGenerator';
  *
  * UX details:
  *  - autofocused on load; Enter submits.
- *  - first-visit hint above the bar — click fills the prompt AND generates;
- *    gone once anything has been generated or applied this session.
+ *  - example chips above the bar fill the input and focus it (no submit);
+ *    kept invisible (but space-preserving) while a generation runs.
  *  - placeholder rotates through example prompts (~4s, subtle fade); paused
  *    while the user has text in the box or a generation is running.
- *  - while generating: staged copy paced against the expected duration
- *    ("composing surface…" → "deriving maps…" → "applying…").
+ *  - while generating: honest, time-based progress. Real GPU runs take
+ *    15–60s, so the staged copy is driven by actual elapsed seconds and the
+ *    final stage holds with a ticking counter until the promise resolves.
+ *    In mock mode (no VITE_FORGE_API_URL) the copy says so.
  *  - on failure: quiet inline error, prompt kept for retry.
  */
 
-const HINT_PROMPT = 'weathered copper, oxidized patina';
+const CHIPS = [
+  'weathered copper, oxidized patina',
+  'rusty steel plate',
+  'mossy stone bricks',
+  'aged oak parquet',
+];
 
 const EXAMPLES = [
   'brushed titanium, fine grain',
@@ -27,41 +33,43 @@ const EXAMPLES = [
   'cracked desert clay',
 ];
 
-const STAGES = ['composing surface…', 'deriving maps…', 'applying…'];
+/** Whether a real backend is configured (mode, not liveness). */
+const BACKEND_CONFIGURED = (() => {
+  const raw: unknown = import.meta.env.VITE_FORGE_API_URL;
+  return typeof raw === 'string' && raw.trim() !== '';
+})();
 
-/** Stage from elapsed fraction of the expected duration. */
-function stageFor(fraction: number): string {
-  if (fraction < 0.45) return STAGES[0] as string;
-  if (fraction < 0.8) return STAGES[1] as string;
-  return STAGES[2] as string;
+/** Staged, honest generating copy driven by real elapsed seconds. */
+function generatingCopy(elapsedSec: number): string {
+  if (!BACKEND_CONFIGURED) return `rendering (mock) · ${elapsedSec}s`;
+  if (elapsedSec < 4) return `composing surface… · ${elapsedSec}s`;
+  if (elapsedSec < 10) return `deriving maps… · ${elapsedSec}s`;
+  // Final stage holds and ticks until the promise resolves.
+  return `rendering on AMD GPU · ${elapsedSec}s`;
 }
 
 export function PromptBar() {
   const [value, setValue] = useState('');
   const [exampleIdx, setExampleIdx] = useState(0);
   const [placeholderFading, setPlaceholderFading] = useState(false);
-  const [stage, setStage] = useState<string>(STAGES[0] as string);
+  const [elapsed, setElapsed] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const status = useMaterialStore((s) => s.status);
-  const touched = useMaterialStore((s) => s.touched);
   const generate = useMaterialStore((s) => s.generate);
   const generating = status === 'generating';
 
-  const submit = async (prompt: string) => {
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
     if (generating) return;
-    const ok = await generate(prompt);
+    const ok = await generate(value);
     // Keep the prompt on failure so the user can retry it unchanged.
     if (ok) setValue('');
   };
 
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    void submit(value);
-  };
-
-  const onHint = () => {
-    setValue(HINT_PROMPT);
-    void submit(HINT_PROMPT);
+  const onChip = (chip: string) => {
+    setValue(chip);
+    inputRef.current?.focus();
   };
 
   // Rotate the placeholder example (~4s with a short fade); paused while the
@@ -78,26 +86,35 @@ export function PromptBar() {
     return () => clearInterval(interval);
   }, [value, generating]);
 
-  // Staged loading copy, paced against the expected generation duration.
+  // Elapsed-seconds ticker while generating (drives the staged copy too).
   useEffect(() => {
     if (!generating) return;
-    setStage(stageFor(0));
+    setElapsed(0);
     const start = performance.now();
     const interval = setInterval(() => {
-      setStage(stageFor((performance.now() - start) / EXPECTED_GENERATION_MS));
-    }, 120);
+      setElapsed(Math.floor((performance.now() - start) / 1000));
+    }, 250);
     return () => clearInterval(interval);
   }, [generating]);
 
   return (
     <div className="promptbar-wrap">
-      {!touched && status === 'idle' && (
-        <button className="prompt-hint" type="button" onClick={onHint}>
-          try: “{HINT_PROMPT}”
-        </button>
-      )}
+      <div className={`chips${generating ? ' chips--hidden' : ''}`} aria-hidden={generating}>
+        {CHIPS.map((chip) => (
+          <button
+            key={chip}
+            className="chip"
+            type="button"
+            tabIndex={generating ? -1 : 0}
+            onClick={() => onChip(chip)}
+          >
+            {chip}
+          </button>
+        ))}
+      </div>
       <form className="promptbar" onSubmit={onSubmit}>
         <input
+          ref={inputRef}
           className={`promptbar__input${placeholderFading ? ' promptbar__input--fading' : ''}`}
           type="text"
           placeholder={`Describe a material…  e.g. “${EXAMPLES[exampleIdx]}”`}
@@ -115,7 +132,7 @@ export function PromptBar() {
           {generating ? (
             <>
               <span className="spinner" aria-hidden="true" />
-              {stage}
+              {generatingCopy(elapsed)}
             </>
           ) : (
             'Generate'

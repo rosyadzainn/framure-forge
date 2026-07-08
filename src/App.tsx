@@ -1,16 +1,25 @@
+import { useEffect } from 'react';
 import { Scene } from './components/Scene';
 import { Header } from './components/ui/Header';
 import { PromptBar } from './components/ui/PromptBar';
 import { MaterialsTray } from './components/ui/MaterialsTray';
 import { MaterialInspector } from './components/ui/MaterialInspector';
 import { DevPanel } from './components/ui/DevPanel';
+import { applyFirstLoadMaterialIfPristine } from './utils/demoMaterial';
 
 /**
  * App shell. The 3D <Scene> fills the viewport; the monochrome UI chrome is an
- * overlay layer on top (header, prompt bar, materials tray, inspector, and a
- * receded dev panel in the corner).
+ * overlay layer on top (header, prompt bar, materials tray, inspector, and —
+ * in dev builds only — a receded dev panel in the corner).
  */
 export function App() {
+  // First frame should show the product working, not neutral gray objects.
+  // No network involved — the material is procedural. Skips if anything is
+  // already active (guard lives in the util; StrictMode-safe).
+  useEffect(() => {
+    applyFirstLoadMaterialIfPristine();
+  }, []);
+
   return (
     <div className="app">
       {/* 3D layer */}
@@ -32,12 +41,12 @@ export function App() {
         {/* Right-side inspector for the active material's maps. */}
         <MaterialInspector />
 
-        {/* Dev tool, tucked into the corner — not product UI. */}
-        <DevPanel />
+        {/* Dev tool — stripped from production builds entirely. */}
+        {import.meta.env.DEV && <DevPanel />}
 
         {/* Non-interactive credit line, in the gap below the dock. */}
         <div className="footer-credit" aria-hidden="true">
-          framure forge — ai materials on amd instinct
+          framure forge — ai materials on amd
         </div>
       </div>
     </div>

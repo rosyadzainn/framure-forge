@@ -107,11 +107,11 @@ body {
   which span the full viewport width and would swallow canvas input.
 */
 .app__ui .header__brand,
-.app__ui .header__meta,
+.app__ui .header__right,
 .app__ui .dev-panel,
 .app__ui .tray,
 .app__ui .promptbar,
-.app__ui .prompt-hint,
+.app__ui .chips,
 .app__ui .inspector,
 .app__ui .lightbox {
   pointer-events: auto;
@@ -160,12 +160,61 @@ body {
   color: var(--text);
 }
 
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
 .header__meta {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-faint);
+}
+
+/* Backend status badge. Fixed min-width so LIVE ↔ MOCK never shifts layout. */
+.gpu-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 150px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.gpu-badge--live {
+  color: var(--text-dim);
+}
+
+.gpu-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-5);
+  flex: 0 0 auto;
+}
+
+.gpu-badge--live .gpu-badge__dot {
+  background: var(--c-9);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0);
+  }
 }
 
 /* ── Shared panel finish (restrained glass) ─────────────────────────────── */
@@ -220,21 +269,35 @@ body {
   opacity: 0;
 }
 
-/* First-visit hint above the bar — click to try a prompt. */
-.prompt-hint {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  background: transparent;
-  border: none;
-  padding: var(--space-1) var(--space-2);
-  cursor: pointer;
-  transition: color 0.15s ease;
+/* Example chips above the bar — fill the input, never auto-submit. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
 }
 
-.prompt-hint:hover {
+/* Invisible but space-preserving while generating: no dock layout jump. */
+.chips--hidden {
+  visibility: hidden;
+}
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip:hover {
   color: var(--text);
+  border-color: var(--c-6);
 }
 
 .promptbar__submit {
@@ -310,8 +373,20 @@ body {
 
 .tray__slots {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
   flex: 1 1 auto;
+  /* Match swatch height so the empty state occupies identical space —
+     no layout jump when the first material arrives. */
+  min-height: 44px;
+}
+
+.tray__empty {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 /* Circular material-ball slot. Empty: dark disc with a subtle ring. */

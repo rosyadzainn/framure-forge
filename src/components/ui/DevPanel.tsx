@@ -1,39 +1,14 @@
 import { useEffect } from 'react';
 import { useMaterialStore } from '../../state/materialStore';
 import { displayName } from '../../utils/displayName';
-import {
-  makeAlbedoDataURL,
-  makeNormalDataURL,
-  makeRoughnessDataURL,
-} from '../../utils/proceduralTextures';
-
-/** Apply the procedural demo material (the exact path the AI layer will use). */
-function applyDemoMaterial(): void {
-  useMaterialStore.getState().setMaterial(
-    {
-      albedo: makeAlbedoDataURL(),
-      normal: makeNormalDataURL(),
-      roughness: makeRoughnessDataURL(),
-    },
-    { label: 'Demo (procedural)', tiling: 2 }
-  );
-}
+import { applyDemoMaterial } from '../../utils/demoMaterial';
 
 /**
- * DEV-ONLY control that proves the material apply-path works end to end,
- * TODAY, before any AI exists.
- *
- * "Load demo material" ALWAYS uses bold procedural <canvas> textures generated
- * at runtime — a high-contrast checker albedo, a strongly bumped normal map,
- * and checker-varied roughness — so the effect is impossible to miss.
- *
- * (A previous version preferred files from /public/textures/demo/ and used a
- * HEAD request to detect them. That was removed: Vite's dev-server SPA
- * fallback answers 200 + index.html for missing files, so the check
- * false-positived and the "loaded" material was invisible. Re-add a file path
- * later only with real content-type validation.)
- *
- * It drives the exact same setMaterial() entry point the AI layer will use.
+ * DEV-ONLY control for exercising the material apply-path by hand. Rendered
+ * exclusively when import.meta.env.DEV (see App.tsx) — it does not exist in
+ * production builds. The demo-material logic itself lives in
+ * src/utils/demoMaterial.ts so the first-load bootstrap works without this
+ * panel.
  */
 export function DevPanel() {
   const resetMaterial = useMaterialStore((s) => s.resetMaterial);
@@ -42,7 +17,7 @@ export function DevPanel() {
   // Dev-only acceptance hook: visiting /?demo=1 applies the demo material on
   // load, so the apply-path can be verified headlessly (no click needed).
   useEffect(() => {
-    if (import.meta.env.DEV && new URLSearchParams(location.search).has('demo')) {
+    if (new URLSearchParams(location.search).has('demo')) {
       applyDemoMaterial();
     }
   }, []);
