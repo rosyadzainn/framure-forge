@@ -5,10 +5,11 @@ import { isBackendLive } from '../../generation/mockGenerator';
 const LIVE_RECHECK_MS = 60_000;
 
 /**
- * Slim header: wordmark on the left; on the right, a live-GPU status badge
- * (pings GET /health on mount and every 60s) next to the version readout.
+ * Backend status badge, fully self-contained: its polling state lives HERE,
+ * in the smallest leaf, so the periodic health check can never re-render the
+ * header (or anything above it). Pings GET /health on mount and every 60s.
  */
-export function Header() {
+function GpuBadge() {
   const [live, setLive] = useState(false);
 
   useEffect(() => {
@@ -27,19 +28,26 @@ export function Header() {
   }, []);
 
   return (
+    <span className={`gpu-badge${live ? ' gpu-badge--live' : ''}`} role="status">
+      <span className="gpu-badge__dot" aria-hidden="true" />
+      {live ? 'live · amd gpu (rocm)' : 'mock mode'}
+    </span>
+  );
+}
+
+/**
+ * Slim header: wordmark on the left; live-GPU badge + version readout on the
+ * right. Holds no state of its own — it renders exactly once.
+ */
+export function Header() {
+  return (
     <header className="header">
       <div className="header__brand">
         <span className="header__mark" aria-hidden="true" />
         <span className="header__wordmark">framure forge</span>
       </div>
       <div className="header__right">
-        <span
-          className={`gpu-badge${live ? ' gpu-badge--live' : ''}`}
-          role="status"
-        >
-          <span className="gpu-badge__dot" aria-hidden="true" />
-          {live ? 'live · amd gpu (rocm)' : 'mock mode'}
-        </span>
+        <GpuBadge />
         <span className="header__meta">material showroom · v0.1</span>
       </div>
     </header>

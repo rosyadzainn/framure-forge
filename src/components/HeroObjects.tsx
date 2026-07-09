@@ -20,21 +20,56 @@ import { useShowroomMaterials } from '../hooks/useShowroomMaterial';
 const PEDESTAL_HEIGHT = 0.25;
 const HERO_COUNT = 4;
 
+/**
+ * Pointer-path cost control: R3F raycasts every mesh that carries pointer
+ * handlers on each pointer move, and three.js tests raycasts per-triangle.
+ * The render geometry is heavily subdivided (~65k triangles across the four
+ * heroes), which puts real milliseconds on the main thread during camera
+ * drags. Each hero therefore raycasts against an invisible LOW-POLY stand-in
+ * of the same shape (~1.6k triangles total, ~40× cheaper). Purely a hit-test
+ * change: rendering, hover behavior, and the scene graph are untouched.
+ */
+const RAYCAST_PROXIES = {
+  sphere: new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 12)),
+  knot: new THREE.Mesh(new THREE.TorusKnotGeometry(0.5, 0.19, 48, 8)),
+  cylinder: new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.5, 16, 1)),
+  panel: new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.9, 0.14)),
+} as const;
+
+type ProxyShape = keyof typeof RAYCAST_PROXIES;
+
+function proxyRaycast(shape: ProxyShape): THREE.Mesh['raycast'] {
+  const proxy = RAYCAST_PROXIES[shape];
+  return function (this: THREE.Mesh, raycaster, intersects) {
+    proxy.matrixWorld = this.matrixWorld;
+    const before = intersects.length;
+    proxy.raycast(raycaster, intersects);
+    // Report hits as coming from the real mesh, not the stand-in.
+    for (let i = before; i < intersects.length; i++) {
+      const hit = intersects[i];
+      if (hit) hit.object = this;
+    }
+  };
+}
+
 interface HeroProps {
   position: [number, number, number];
   rotation?: [number, number, number];
   material: THREE.MeshStandardMaterial;
+  proxy: ProxyShape;
   onHover: (hovering: boolean) => void;
   children: ReactNode;
 }
 
-function Hero({ position, rotation, material, onHover, children }: HeroProps) {
+function Hero({ position, rotation, material, proxy, onHover, children }: HeroProps) {
+  const raycast = useMemo(() => proxyRaycast(proxy), [proxy]);
   return (
     <mesh
       position={position}
       rotation={rotation ?? [0, 0, 0]}
       material={material}
       castShadow
+      raycast={raycast}
       onPointerOver={() => onHover(true)}
       onPointerOut={() => onHover(false)}
     >
@@ -71,6 +106,7 @@ export function HeroObjects() {
       <Hero
         position={[-3, PEDESTAL_HEIGHT + 0.85, 0.4]}
         material={materials[0]}
+        proxy="sphere"
         onHover={hover(0)}
       >
         <sphereGeometry args={[0.85, 128, 128]} />
@@ -82,6 +118,7 @@ export function HeroObjects() {
         position={[-0.9, PEDESTAL_HEIGHT + 0.8, -0.2]}
         rotation={[0.3, 0, 0]}
         material={materials[1]}
+        proxy="knot"
         onHover={hover(1)}
       >
         <torusKnotGeometry args={[0.5, 0.19, 256, 32]} />
@@ -92,6 +129,7 @@ export function HeroObjects() {
       <Hero
         position={[1.2, PEDESTAL_HEIGHT + 0.75, 0.3]}
         material={materials[2]}
+        proxy="cylinder"
         onHover={hover(2)}
       >
         <cylinderGeometry args={[0.55, 0.55, 1.5, 128, 48]} />
@@ -108,6 +146,7 @@ export function HeroObjects() {
         steps={12}
         material={materials[3]}
         castShadow
+        raycast={proxyRaycast('panel')}
         onPointerOver={() => hover(3)(true)}
         onPointerOut={() => hover(3)(false)}
       />

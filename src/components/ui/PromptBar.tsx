@@ -48,11 +48,30 @@ function generatingCopy(elapsedSec: number): string {
   return `rendering on AMD GPU · ${elapsedSec}s`;
 }
 
+/**
+ * The ticking elapsed label, isolated in the smallest possible leaf: it is
+ * mounted only while generating, and its 4×/s state updates re-render ONLY
+ * this text fragment — never the prompt bar, and nothing on the path to the
+ * 3D canvas.
+ */
+function GeneratingLabel() {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const start = performance.now();
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((performance.now() - start) / 1000));
+    }, 250);
+    return () => clearInterval(interval);
+  }, []);
+
+  return <>{generatingCopy(elapsed)}</>;
+}
+
 export function PromptBar() {
   const [value, setValue] = useState('');
   const [exampleIdx, setExampleIdx] = useState(0);
   const [placeholderFading, setPlaceholderFading] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const status = useMaterialStore((s) => s.status);
@@ -85,17 +104,6 @@ export function PromptBar() {
     }, 4000);
     return () => clearInterval(interval);
   }, [value, generating]);
-
-  // Elapsed-seconds ticker while generating (drives the staged copy too).
-  useEffect(() => {
-    if (!generating) return;
-    setElapsed(0);
-    const start = performance.now();
-    const interval = setInterval(() => {
-      setElapsed(Math.floor((performance.now() - start) / 1000));
-    }, 250);
-    return () => clearInterval(interval);
-  }, [generating]);
 
   return (
     <div className="promptbar-wrap">
@@ -132,7 +140,7 @@ export function PromptBar() {
           {generating ? (
             <>
               <span className="spinner" aria-hidden="true" />
-              {generatingCopy(elapsed)}
+              <GeneratingLabel />
             </>
           ) : (
             'Generate'
