@@ -175,17 +175,65 @@ body {
 }
 
 /* Backend status badge. Fixed min-width so LIVE ↔ MOCK never shifts layout. */
+.gpu-badge-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
 .gpu-badge {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
   min-width: 150px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-faint);
+  transition: color 0.15s ease;
+}
+
+.gpu-badge:hover {
+  color: var(--text-dim);
+}
+
+/* Info popover anchored under the badge; absolute, so no layout shift. */
+.gpu-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 264px;
+  padding: var(--space-3) var(--space-4);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  text-align: left;
+  color: var(--text-dim);
+  z-index: 10;
+  animation: pop-fade 0.16s ease;
+}
+
+@keyframes pop-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .gpu-badge--live {
@@ -286,18 +334,19 @@ body {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.06em;
-  color: var(--text-faint);
-  background: transparent;
-  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  background: rgba(11, 11, 13, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   padding: var(--space-1) var(--space-3);
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .chip:hover {
-  color: var(--text);
-  border-color: var(--c-6);
+  color: var(--c-10);
+  border-color: var(--c-7);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .promptbar__submit {
@@ -652,6 +701,81 @@ button.swatch:hover {
 
 .btn--ghost:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Loading overlay — plain DOM, unmounted after the first scene frame ── */
+
+.loading {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  /* Same backdrop as the app body — no flash at either transition. */
+  background:
+    radial-gradient(90% 70% at 50% 42%, #131316 0%, #0a0a0c 55%, var(--c-0) 100%);
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.loading--hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.loading__wordmark {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: lowercase;
+  color: var(--text);
+}
+
+.loading__dots {
+  display: flex;
+  gap: 7px;
+}
+
+.loading__dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--c-7);
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+
+.loading__dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading__dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading__dots span {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 /* ── Footer credit — in the gap below the dock, never overlapping ───────── */

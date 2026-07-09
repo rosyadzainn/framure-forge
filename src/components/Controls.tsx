@@ -3,6 +3,7 @@ import { OrbitControls } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { useInteractionStore } from '../state/interactionStore';
 
 /**
  * Orbit / zoom / pan with damping, plus:
@@ -60,12 +61,16 @@ export function Controls() {
     const controls = ref.current;
     if (!controls) return;
 
+    const setInteracting = useInteractionStore.getState().setInteracting;
+
     const stop = () => {
       controls.autoRotate = false;
+      setInteracting(true);
       if (idleTimer.current) clearTimeout(idleTimer.current);
     };
 
     const scheduleResume = () => {
+      setInteracting(false);
       if (idleTimer.current) clearTimeout(idleTimer.current);
       idleTimer.current = setTimeout(() => {
         controls.autoRotate = true;

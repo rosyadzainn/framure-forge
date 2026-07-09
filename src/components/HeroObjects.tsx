@@ -109,7 +109,9 @@ export function HeroObjects() {
         proxy="sphere"
         onHover={hover(0)}
       >
-        <sphereGeometry args={[0.85, 128, 128]} />
+        {/* 64×48 (~6k tris, was 128×128/~32k): silhouette chord error at demo
+            distance is sub-pixel; normal-map detail is per-fragment anyway. */}
+        <sphereGeometry args={[0.85, 64, 48]} />
       </Hero>
 
       {/* — Torus knot — the rounded / organic form. */}
@@ -121,7 +123,9 @@ export function HeroObjects() {
         proxy="knot"
         onHover={hover(1)}
       >
-        <torusKnotGeometry args={[0.5, 0.19, 256, 32]} />
+        {/* 160×24 (~7.7k tris, was 256×32/~16k): the knot path stays fluid;
+            the tube cross-section keeps 24 segments so its edge reads round. */}
+        <torusKnotGeometry args={[0.5, 0.19, 160, 24]} />
       </Hero>
 
       {/* — Cylinder — a clean primitive. */}
@@ -132,7 +136,9 @@ export function HeroObjects() {
         proxy="cylinder"
         onHover={hover(2)}
       >
-        <cylinderGeometry args={[0.55, 0.55, 1.5, 128, 48]} />
+        {/* 64×1 (~0.4k tris, was 128×48/~12k): height segments add nothing —
+            lighting is per-fragment and no displacement map is used. */}
+        <cylinderGeometry args={[0.55, 0.55, 1.5, 64, 1]} />
       </Hero>
 
       {/* — Flat panel — a slab to read tiling/flat detail cleanly. */}
@@ -142,8 +148,7 @@ export function HeroObjects() {
         rotation={[0, -0.35, 0]}
         args={[1.4, 1.9, 0.14]}
         radius={0.06}
-        smoothness={6}
-        steps={12}
+        smoothness={4}
         material={materials[3]}
         castShadow
         raycast={proxyRaycast('panel')}

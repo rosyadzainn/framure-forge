@@ -36,7 +36,8 @@ const FIRST_LOAD_PROMPT = 'weathered bronze, dark patina';
  *  - no fake latency and no random failure (must be instant and reliable);
  *  - the hash-derived hue for this prompt lands on yellow-green, so the
  *    color fields are clamped to bronze to match the label.
- * Follows the demo pattern: applied directly, not added to the history tray.
+ * Seeded through the store, so it shows up in the materials tray as a
+ * normal clickable, active entry — the tray is never empty on first load.
  */
 export function applyFirstLoadMaterialIfPristine(): void {
   const { touched, maps } = useMaterialStore.getState();
@@ -48,10 +49,7 @@ export function applyFirstLoadMaterialIfPristine(): void {
     sat: 42,
     light: 44,
   };
-  useMaterialStore
+  void useMaterialStore
     .getState()
-    .setMaterial(makeProceduralMaps(params), {
-      label: FIRST_LOAD_PROMPT,
-      tiling: 2,
-    });
+    .seedMaterial(FIRST_LOAD_PROMPT, makeProceduralMaps(params));
 }

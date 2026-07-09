@@ -67,6 +67,13 @@ interface MaterialStore extends MaterialState {
   generate: (prompt: string) => Promise<boolean>;
   /** Re-apply a material from the tray history. */
   applyEntry: (id: string) => void;
+  /**
+   * Seed the tray with an already-built material (the first-load default):
+   * applies it to the showroom immediately (synchronously, so the first
+   * frame isn't neutral), then adds it to the history as a normal,
+   * clickable, active entry once its sphere thumbnail is rendered.
+   */
+  seedMaterial: (prompt: string, maps: MaterialMaps) => Promise<void>;
 }
 
 export const useMaterialStore = create<MaterialStore>((set, get) => ({
@@ -132,5 +139,30 @@ export const useMaterialStore = create<MaterialStore>((set, get) => ({
       status: 'idle',
       touched: true,
     });
+  },
+
+  seedMaterial: async (prompt, maps) => {
+    // Apply immediately — `touched` also guards StrictMode double-invocation.
+    set({ maps, tiling: GENERATED_TILING, label: prompt, touched: true });
+    try {
+      const thumb = await renderMaterialThumbnail(maps);
+      const entry: MaterialHistoryEntry = {
+        id: crypto.randomUUID(),
+        prompt,
+        maps,
+        tiling: GENERATED_TILING,
+        thumb,
+        createdAt: Date.now(),
+      };
+      set((state) => ({
+        // Seeded entry sits at the OLD end: newly generated materials keep
+        // prepending in front of it, exactly as they do for each other.
+        history: [...state.history, entry].slice(0, HISTORY_CAP),
+        // Mark it active unless something else was applied in the meantime.
+        activeId: state.activeId ?? entry.id,
+      }));
+    } catch (err) {
+      console.warn('[showroom] failed to seed the tray thumbnail:', err);
+    }
   },
 }));

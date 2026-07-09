@@ -1,5 +1,6 @@
-import { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Suspense, useEffect, useRef } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useInteractionStore } from '../state/interactionStore';
 import { PerspectiveCamera } from '@react-three/drei';
 import { EffectComposer, Vignette, Noise } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
@@ -17,10 +18,40 @@ import { Controls, INTRO_FROM } from './Controls';
  *  - fog dissolves the floor's horizon line into the dark backdrop
  *  - light post-processing: subtle vignette + fine film grain only
  */
+/** Flags the store on the scene's first rendered frame — the DOM loading
+ *  screen fades out on this signal, not on a timeout. */
+function SceneReadySignal() {
+  const signalled = useRef(false);
+  useFrame(() => {
+    if (signalled.current) return;
+    signalled.current = true;
+    useInteractionStore.getState().setSceneReady();
+  });
+  return null;
+}
+
+/**
+ * The objects and the shadow-casting spotlight never move, so the shadow map
+ * is re-rendered exactly once instead of every frame (three's default).
+ * Pixel-identical output; removes a whole depth pass per frame.
+ */
+function FrozenShadowMaps() {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    gl.shadowMap.autoUpdate = false;
+    gl.shadowMap.needsUpdate = true;
+  }, [gl]);
+  return null;
+}
+
 export function Scene() {
+  // frameloop stays "always" (default): idle auto-rotate and OrbitControls
+  // damping both need continuous frames, so "demand" would break them.
   return (
     <Canvas
-      dpr={[1, 2]}
+      // Cap at 1.25x: on 2x laptop screens this renders ~61% fewer pixels —
+      // the single biggest GPU saving. Slight softness is the accepted trade.
+      dpr={[1, 1.25]}
       shadows="soft"
       gl={{
         antialias: true,
@@ -47,10 +78,19 @@ export function Scene() {
         <Staging />
       </Suspense>
 
+      <FrozenShadowMaps />
+      <SceneReadySignal />
+
       <Controls />
 
-      {/* Subtle vignette + very fine grain. Deliberately nothing else. */}
-      <EffectComposer multisampling={4}>
+      {/*
+        Post audit: Vignette and Noise are single fullscreen-shader effects,
+        merged by postprocessing into ONE pass — per-pixel cost is trivial.
+        The composer's real expense was its 4x-multisampled render target;
+        MSAA 2 halves those samples and the edge quality difference is barely
+        visible at 1.5x DPR. Deliberately nothing else (no bloom, no DOF).
+      */}
+      <EffectComposer multisampling={2}>
         <Vignette eskil={false} offset={0.22} darkness={0.62} />
         <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={0.28} />
       </EffectComposer>

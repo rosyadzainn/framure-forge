@@ -5,6 +5,7 @@ import { PromptBar } from './components/ui/PromptBar';
 import { MaterialsTray } from './components/ui/MaterialsTray';
 import { MaterialInspector } from './components/ui/MaterialInspector';
 import { DevPanel } from './components/ui/DevPanel';
+import { LoadingScreen } from './components/ui/LoadingScreen';
 import { applyFirstLoadMaterialIfPristine } from './utils/demoMaterial';
 
 /**
@@ -49,6 +50,9 @@ export function App() {
           framure forge — ai materials on amd
         </div>
       </div>
+
+      {/* Branded loading overlay — plain DOM, unmounts after first frame. */}
+      <LoadingScreen />
     </div>
   );
 }
