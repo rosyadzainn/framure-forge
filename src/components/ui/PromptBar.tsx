@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useMaterialStore } from '../../state/materialStore';
+import { useStrings, type Strings } from '../../i18n/strings';
 
 /**
  * The material-generation prompt box. Submits to the store's `generate`
@@ -40,12 +41,12 @@ const BACKEND_CONFIGURED = (() => {
 })();
 
 /** Staged, honest generating copy driven by real elapsed seconds. */
-function generatingCopy(elapsedSec: number): string {
-  if (!BACKEND_CONFIGURED) return `rendering (mock) · ${elapsedSec}s`;
-  if (elapsedSec < 4) return `composing surface… · ${elapsedSec}s`;
-  if (elapsedSec < 10) return `deriving maps… · ${elapsedSec}s`;
+function generatingCopy(elapsedSec: number, t: Strings): string {
+  if (!BACKEND_CONFIGURED) return t.genMock(elapsedSec);
+  if (elapsedSec < 4) return t.genCompose(elapsedSec);
+  if (elapsedSec < 10) return t.genDerive(elapsedSec);
   // Final stage holds and ticks until the promise resolves.
-  return `rendering on AMD GPU · ${elapsedSec}s`;
+  return t.genGpu(elapsedSec);
 }
 
 /**
@@ -56,6 +57,7 @@ function generatingCopy(elapsedSec: number): string {
  */
 function GeneratingLabel() {
   const [elapsed, setElapsed] = useState(0);
+  const t = useStrings();
 
   useEffect(() => {
     const start = performance.now();
@@ -65,7 +67,7 @@ function GeneratingLabel() {
     return () => clearInterval(interval);
   }, []);
 
-  return <>{generatingCopy(elapsed)}</>;
+  return <>{generatingCopy(elapsed, t)}</>;
 }
 
 export function PromptBar() {
@@ -77,6 +79,7 @@ export function PromptBar() {
   const status = useMaterialStore((s) => s.status);
   const generate = useMaterialStore((s) => s.generate);
   const generating = status === 'generating';
+  const t = useStrings();
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -125,12 +128,12 @@ export function PromptBar() {
           ref={inputRef}
           className={`promptbar__input${placeholderFading ? ' promptbar__input--fading' : ''}`}
           type="text"
-          placeholder={`Describe a material…  e.g. “${EXAMPLES[exampleIdx]}”`}
+          placeholder={t.promptPlaceholder(EXAMPLES[exampleIdx] ?? '')}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           disabled={generating}
           autoFocus
-          aria-label="Material prompt"
+          aria-label={t.promptAria}
         />
         <button
           className="promptbar__submit"
@@ -143,13 +146,13 @@ export function PromptBar() {
               <GeneratingLabel />
             </>
           ) : (
-            'Generate'
+            t.generate
           )}
         </button>
       </form>
       {status === 'error' && (
         <div className="promptbar__error" role="alert">
-          Generation failed — try again
+          {t.genError}
         </div>
       )}
     </div>

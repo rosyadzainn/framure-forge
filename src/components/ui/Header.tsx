@@ -1,14 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
 import { isBackendLive } from '../../generation/mockGenerator';
+import { useLanguageStore, type Lang } from '../../state/languageStore';
+import { useStrings } from '../../i18n/strings';
 
 /** Re-check the backend health this often. */
 const LIVE_RECHECK_MS = 60_000;
 
-const MOCK_INFO =
-  'Live inference runs on an AMD Radeon PRO W7900 (ROCm) via the FastAPI ' +
-  'backend — see the demo video. This deployment serves mock data so the ' +
-  'showroom is always explorable.';
-const LIVE_INFO = 'Connected to live SDXL backend on AMD ROCm.';
+/** EN | ID language switcher, persisted via the language store. */
+function LangToggle() {
+  const lang = useLanguageStore((s) => s.lang);
+  const setLang = useLanguageStore((s) => s.setLang);
+
+  const btn = (code: Lang) => (
+    <button
+      className={`lang-toggle__btn${lang === code ? ' lang-toggle__btn--active' : ''}`}
+      type="button"
+      onClick={() => setLang(code)}
+      aria-pressed={lang === code}
+    >
+      {code}
+    </button>
+  );
+
+  return (
+    <span className="lang-toggle" role="group" aria-label="Language">
+      {btn('en')}
+      <span className="lang-toggle__sep" aria-hidden="true">
+        |
+      </span>
+      {btn('id')}
+    </span>
+  );
+}
 
 /**
  * Backend status badge, fully self-contained: its polling state lives HERE,
@@ -24,6 +47,7 @@ function GpuBadge() {
   const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const t = useStrings();
 
   useEffect(() => {
     let cancelled = false;
@@ -68,11 +92,11 @@ function GpuBadge() {
         onClick={() => setPinned((p) => !p)}
       >
         <span className="gpu-badge__dot" aria-hidden="true" />
-        {live ? 'live · amd gpu (rocm)' : 'mock mode'}
+        {live ? t.badgeLive : t.badgeMock}
       </button>
       {open && (
         <div className="gpu-pop" role="tooltip">
-          {live ? LIVE_INFO : MOCK_INFO}
+          {live ? t.badgeLiveInfo : t.badgeMockInfo}
         </div>
       )}
     </div>
@@ -80,10 +104,11 @@ function GpuBadge() {
 }
 
 /**
- * Slim header: wordmark on the left; live-GPU badge + version readout on the
- * right. Holds no state of its own — it renders exactly once.
+ * Slim header: wordmark on the left; language toggle, live-GPU badge and
+ * version readout on the right.
  */
 export function Header() {
+  const t = useStrings();
   return (
     <header className="header">
       <div className="header__brand">
@@ -91,8 +116,9 @@ export function Header() {
         <span className="header__wordmark">framure forge</span>
       </div>
       <div className="header__right">
+        <LangToggle />
         <GpuBadge />
-        <span className="header__meta">material showroom · v0.1</span>
+        <span className="header__meta">{t.headerMeta}</span>
       </div>
     </header>
   );

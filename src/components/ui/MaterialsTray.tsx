@@ -1,4 +1,5 @@
 import { useMaterialStore } from '../../state/materialStore';
+import { useStrings } from '../../i18n/strings';
 
 /**
  * Materials tray: the generation HISTORY as circular material-ball slots
@@ -12,13 +13,14 @@ export function MaterialsTray() {
   const history = useMaterialStore((s) => s.history);
   const activeId = useMaterialStore((s) => s.activeId);
   const applyEntry = useMaterialStore((s) => s.applyEntry);
+  const t = useStrings();
 
   return (
     <div className="tray">
-      <div className="tray__label">materials</div>
+      <div className="tray__label">{t.trayLabel}</div>
       <div className="tray__slots">
         {history.length === 0 ? (
-          <span className="tray__empty">generated materials appear here</span>
+          <span className="tray__empty">{t.trayEmpty}</span>
         ) : (
           history.map((entry) => {
             const active = entry.id === activeId;
@@ -29,7 +31,7 @@ export function MaterialsTray() {
                 type="button"
                 onClick={() => applyEntry(entry.id)}
                 data-tip={entry.prompt}
-                aria-label={`Apply material: ${entry.prompt}`}
+                aria-label={t.applyAria(entry.prompt)}
                 aria-pressed={active}
               >
                 <img className="swatch__img" src={entry.thumb} alt="" />

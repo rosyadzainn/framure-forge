@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import JSZip from 'jszip';
 import { useMaterialStore } from '../../state/materialStore';
 import { displayName } from '../../utils/displayName';
+import { useStrings } from '../../i18n/strings';
 import type { MaterialMaps } from '../../types/material';
 
 /**
@@ -53,6 +54,7 @@ export function MaterialInspector() {
   const label = useMaterialStore((s) => s.label);
   const [lightbox, setLightbox] = useState<{ src: string; name: string } | null>(null);
   const [zipping, setZipping] = useState(false);
+  const t = useStrings();
 
   // Escape closes the lightbox.
   useEffect(() => {
@@ -105,7 +107,7 @@ export function MaterialInspector() {
           onClick={onDownload}
           disabled={zipping}
         >
-          {zipping ? 'Packing…' : 'Download'}
+          {zipping ? t.packing : t.download}
         </button>
       </aside>
 

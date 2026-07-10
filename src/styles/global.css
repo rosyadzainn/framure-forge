@@ -174,6 +174,40 @@ body {
   color: var(--text-faint);
 }
 
+/* EN | ID language toggle. */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.lang-toggle__btn {
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  transition: color 0.15s ease;
+}
+
+.lang-toggle__btn:hover {
+  color: var(--text-dim);
+}
+
+.lang-toggle__btn--active {
+  color: var(--text);
+}
+
+.lang-toggle__sep {
+  color: var(--c-4);
+}
+
 /* Backend status badge. Fixed min-width so LIVE ↔ MOCK never shifts layout. */
 .gpu-badge-wrap {
   position: relative;
