@@ -47,7 +47,7 @@ export function App() {
 
         {/* Non-interactive credit line, in the gap below the dock. */}
         <div className="footer-credit" aria-hidden="true">
-          framure forge — ai materials on amd
+          framure forge — ai materials · powered by amd radeon pro w7900 · rocm
         </div>
       </div>
 
