@@ -106,6 +106,40 @@ Open http://localhost:5173 — generation uses the built-in mock.
 
 3. Sanity check: open `<tunnel-url>/health` — expect `"gpu_arch":"gfx1100"`.
 
+## Run with Docker
+
+Both halves are containerized. The backend container requires an **AMD
+ROCm-capable host** with the kernel driver exposed to the container
+(`/dev/kfd` and `/dev/dri` device passthrough) — it will not run on
+NVIDIA/CPU-only hosts.
+
+**Backend** (SDXL on ROCm; image pinned to ROCm 7.2 + PyTorch 2.9.1):
+
+```
+docker build -t framure-forge-backend ./backend
+docker run --rm -p 8000:8000 \
+  --device=/dev/kfd --device=/dev/dri \
+  --group-add video --security-opt seccomp=unconfined \
+  -v framure-hf-cache:/root/.cache/huggingface \
+  framure-forge-backend
+```
+
+The SDXL weights (~7 GB) download on first request; the named volume keeps
+them across restarts. Check `http://localhost:8000/health` for the live
+hardware report.
+
+**Frontend** (static build served by nginx; `VITE_FORGE_API_URL` is baked in
+at build time — omit the build-arg for mock mode):
+
+```
+docker build -t framure-forge-web \
+  --build-arg VITE_FORGE_API_URL=http://localhost:8000 .
+docker run --rm -p 5173:80 framure-forge-web
+```
+
+Then open http://localhost:5173. The non-Docker instructions above remain
+the everyday alternative.
+
 ## Project structure
 
 ```
@@ -120,8 +154,10 @@ src/
   utils/                       procedural mock maps, sphere-thumbnail renderer
 backend/
   forge_server.py              FastAPI + SDXL on ROCm; /generate, /health
+  Dockerfile                   ROCm PyTorch image + server (port 8000)
   GPU-SESSION.md               session runbook (install, tunnel, warmup)
   amd-gpu-spike.ipynb          GPU proof notebook (rocm-smi + timed run)
+Dockerfile                     frontend: Vite build → nginx static image
 .env.example                   VITE_FORGE_API_URL template
 ```
 
